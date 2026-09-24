@@ -16,6 +16,10 @@
 
 % ---------------------------------------------------------------- packages ---
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}   % Type 1 text fonts; without this the T1 (EC) fonts
+                       % fall back to 600 dpi METAFONT bitmaps embedded as
+                       % Type 3 fonts with no ToUnicode, which breaks text
+                       % selection, copy/paste and search in some viewers.
 \usepackage[utf8]{inputenc}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{graphicx}
@@ -87,8 +91,8 @@ Inverted Pendulum on a Slope\par}
 \toprule
 Matriculation Number \\
 \midrule
-\todo{matric no. of member 1} \\
-\todo{matric no. of member 2} \\
+A0286716R \\
+A0284748L \\
 \bottomrule
 \end{tabular}
 
@@ -113,10 +117,9 @@ Matriculation Number \\
 \toprule
 \textbf{Matric no.} & \textbf{Area} & \textbf{Contribution (point form)} \\
 \midrule
-\todo{matric 1} & Tuning method A & \todo{one line per contribution: e.g. designed and ran the 11 experiments on input scaling; produced the data in Appendix~\ref{app:data}} \\
-                &                 & \todo{contribution 2} \\[0.4em]
-\todo{matric 2} & Tuning method B & \todo{contribution 1} \\
-                &                 & \todo{contribution 2} \\
+A0286716R & Method A: output bias & Investigated gravity-compensated output singletons across four initial angles; analysed residual-error reduction, clipping and overcompensation. \\
+          & Method B: output spacing & Tested 193 symmetric and asymmetric singleton pairs; compared settling, overshoot, residual error and force variation against baseline. \\[0.4em]
+A0284748L & Methods C and D & \todo{Member 2: add contributions after investigating both methods.} \\
 \bottomrule
 \end{tabular}
 \caption{Individual contributions. Each member must have at least two
@@ -371,9 +374,10 @@ the simulated $\gam(t)$ and $f(t)$:
         the direction opposite to $\gam_0$, normalised by $|\gam_0|$.
   \item[Steady-state error $\sse$] mean of $|\gam(t)|$ over the last
         \SI{1}{\s} of the simulation.
-  \item[Oscillation] peak-to-peak amplitude of $\gam$ after $\ts$, or
-        equivalently the number of zero crossings of $\gam$ in the last
-        \SI{2}{\s}.
+  \item[Late-time variation] peak-to-peak range over the final \SI{1}{\s},
+        measured separately for $\gam$, $\gamdot$ and $f$. This includes slow
+        drift as well as oscillation. The final-second error and ranges are
+        finite-horizon measures, not proof of an asymptotic steady state.
 \end{description}
 
 \paragraph{Reproducibility.}
@@ -432,149 +436,299 @@ experimental design, the measured effect on the four metrics, and an
 interpretation. Methods that do not help are reported as negative results,
 because they constrain the search space and reveal which mechanism dominates.
 
-\subsection{Method A: \todo{name of tuning method}}
+\subsection{Method A: Gravity-compensated output membership values}
 \label{sec:method-a}
 
-\paragraph{Motivation and hypothesis.} \todo{why this method was chosen, with
-reference to the control surface or to the baseline diagnosis.}
+\paragraph{Motivation and hypothesis.}
+At $p=d=0$, only the $(\mathrm{ZO},\mathrm{ZO})\to\mathrm{ZO}$ rule fires,
+so the baseline produces zero force. Holding the system stationary on the
+slope instead requires $W=\SI{12.979}{\N}$ from \eqref{eq:weight}.
+Biasing the output membership values towards this force should reduce the
+angle error needed to generate an uphill force.
 
-\paragraph{Design.} \todo{which parameters were varied, over what range, how
-many levels, everything else held constant, number of initial angles.}
+\paragraph{Design.}
+Each baseline output singleton $F_i^{(0)}\in\{-50,-25,0,25,50\}\,\si{\N}$
+is replaced by
+\begin{equation}
+  F_i(k)=\min\!\left(50,\max\!\left(-50,F_i^{(0)}+kW\right)\right).
+  \label{eq:method-a-bias}
+\end{equation}
+The input membership functions, 25 rules, inference methods and simulator
+remain unchanged. Ten bias fractions are tested at all four starting angles.
+Table~\ref{tab:method-a} shows representative settings; the full sweep is in
+Appendix~\ref{app:method-a-data}. Selection minimises the worst-case
+final-second mean absolute angle error, rather than settling time alone.
+
+Before clipping, the Sugeno weighted average satisfies
+$\sum_r w_r(F_r^{(0)}+kW)/\sum_r w_r=f_0(p,d)+kW$.
+Thus the bias shifts the control surface upwards. Clipping the PB singleton
+at \SI{50}{\N} reduces that shift where PB-output rules fire; the implemented
+method is not identical to adding a constant after fuzzy inference.
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lcccccc@{}}
+\begin{tabular}{@{}ccccc@{}}
 \toprule
-\textbf{Setting} & \textbf{Parameter} & $\ts$ (\si{\s}) & $\overshoot$ (\si{\%}) & $\sse$ (\si{\degree}) & Oscillation & Note \\
+$k$ & $\ts$ (\si{\s}) & $\overshoot$ (\si{\%}) & $\sse$ (\si{\degree}) & Angle range (\si{\degree}) \\
 \midrule
-S1 & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-S2 & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
-S3 & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} & \todo{} \\
+0.00 & $\infty$ & 56.44 & 1.9427 & 0.10125 \\
+0.50 & $\infty$ & 40.52 & 1.0532 & 0.05381 \\
+0.75 & 0.48 & 31.14 & 0.6146 & 0.03110 \\
+1.00 & 0.44 & 22.73 & 0.1754 & 0.00879 \\
+1.05 & 0.45 & 24.38 & 0.1388 & 0.00691 \\
+1.25 & 0.49 & 28.61 & 0.4956 & 0.02458 \\
 \bottomrule
 \end{tabular}
-\caption{Method A sweep. Metrics reported for the worst initial angle, or as
-mean $\pm$ range over the four angles (state which).}
+\caption{Output-bias tuning. Each metric is the maximum across the four
+starting angles; these maxima need not occur for the same angle.
+Angle range is measured over $t\in[4,5]$~\si{\s}.
+$\ts=\infty$ denotes failure to settle within the five-second simulation.}
 \label{tab:method-a}
 \end{table}
 
-\paragraph{Results and interpretation.} \todo{quantify the trend, explain the
-mechanism, and state whether the hypothesis held.}
-
-\subsection{Method B: \todo{name of tuning method}}
-\label{sec:method-b}
-
-\paragraph{Motivation and hypothesis.} \todo{}
-\paragraph{Design.} \todo{}
-\paragraph{Results and interpretation.} \todo{}
-
-\subsection{Method C: Rule Weighting}
-\label{sec:method-c}
-
-\paragraph{Motivation and hypothesis.} The baseline diagnosis
-(Section~\ref{sec:baseline-interpretation}) is that $\gam$ never settles: it
-converges to a constant offset of roughly $1.8$--$1.9\degC$ for every initial
-angle. The mechanism is structural, not a bad breakpoint choice: at the exact
-origin $p{=}0,d{=}0$ only the single rule \texttt{p==ZO \& d==ZO => f==ZO}
-fires (its neighbours evaluate to zero there, since \texttt{ZO} is a
-triangular, not flat-topped, term), so the crisp output is forced to
-$f{=}\SI{0}{\newton}$ whenever $\gam{=}0$. Since the slope contributes a
-constant force \texttt{constants.WEIGHT} $\ne 0$ along the track, $0\,$N can
-never be an equilibrium at $\gam{=}0$, and the baseline settles wherever the
-blended output finally balances gravity instead -- away from the exact
-origin, so the offset is unavoidable given the rule base's output levels.
-Away from the origin, however, $2$--$4$ rules overlap (both inputs have
-overlapping trapezoids), so the hypothesis tested here is: \emph{without
-moving any membership-function breakpoint or crisp output level, can giving
-each of the 25 rules its own weight $w_{ij}\in(0.02,1]$ bias which of the
-overlapping rules dominates the \texttt{wtaver} blend enough to pull the true
-equilibrium much closer to $\gam{=}0$, and speed up the approach to it?}
-
-\paragraph{Design.} Each rule's trailing \texttt{addRule} weight argument was
-parameterised as one entry of a $5\times5$ matrix \texttt{params.RULE\_W}
-(rows/cols ordered NB,NS,ZO,PS,PB for $p,d$) and searched with MATLAB's
-\texttt{fminsearch} (derivative-free Nelder--Mead, since the cost comes from
-the non-smooth Euler--Lagrange simulation, not a closed form), started from
-several random and warm-started restarts to avoid the many local minima of a
-25-dimensional, non-convex search. The cost summed, over all four
-$\gam_0$, an integral-squared-error term on $\gam(t)$ (weighted more heavily
-after $t{=}\SI{0.5}{\s}$ and over the final \SI{1}{\s}, to push settling
-speed and steady-state accuracy specifically), explicit penalties on
-overshoot and final $\sse$, and a mild control-effort term. Three settings
-were evaluated, because the first optimisation round produced a genuine
-negative result that motivated a second (Section~\ref{sec:negative}
-elaborates): \textbf{S1} baseline ($w_{ij}{=}1$ for all rules, i.e.\ no
-weighting, equivalent to the original rule base since a uniform scale factor
-cancels in \texttt{wtaver}); \textbf{S2} the above cost optimised with no
-smoothness term; \textbf{S3} the same optimisation with two extra penalty
-terms added, $\sum(\Delta f)^2$ (squared jump in cart force between
-consecutive controller updates) and $\sum(\Delta\gamdot)^2$ restricted to the
-second half of the run (residual angular-velocity oscillation), to explicitly
-discourage chattering. All optimisations, and the reported metrics, use the
-same fixed team seed and plant parameters as the rest of this report.
+\paragraph{Results and interpretation.}
+Increasing $k$ from zero to one reduces the residual error and allows all four
+responses to settle within \SI{0.5}{\s}. This supports the hypothesis that the
+missing uphill bias contributes to the baseline offset. The best tested
+setting for the selected error criterion is $k=1.05$, giving
+\begin{equation*}
+  [F_{\mathrm{NB}},F_{\mathrm{NS}},F_{\mathrm{ZO}},F_{\mathrm{PS}},F_{\mathrm{PB}}]
+  =[-36.372,-11.372,13.628,38.628,50.000]\,\si{\N}.
+\end{equation*}
+It reduces the worst-case residual error by \SI{92.9}{\%} relative to the
+baseline. The worst final-second angular-velocity and force ranges also fall,
+from \SI{0.00978}{\degree\per\s} and \SI{0.9738}{\N} to
+\SI{0.000643}{\degree\per\s} and \SI{0.0671}{\N}, respectively.
+Figure~\ref{fig:method-a-comparison} compares the complete responses.
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{@{}lcccccc@{}}
+\begin{tabular}{@{}cccc@{}}
 \toprule
-\textbf{Setting} & \textbf{Parameter} & $\ts$ (\si{\s}) & $\overshoot$ (\si{\%}) & $\sse$ (\si{\degree}) & Oscillation & Note \\
+$\gam_0$ (\si{\degree}) & $\ts$ (\si{\s}) & $\overshoot$ (\si{\%}) & $\sse$ (\si{\degree}) \\
 \midrule
-S1 & baseline, $w_{ij}{=}1$ & $\infty$ & 21.6 (0--56.4) & 1.83 (1.76--1.94) & n/a (never settles) & steady bias, no chatter \\
-S2 & optimised, tracking-only cost & 0.38 (0.14--0.70) & 3.8 (0--11.4) & 0.27 (0.23--0.34) & 1.08 (0.81--1.43) & severe $\gamdot$/force chatter \\
-S3 (final) & optimised, + anti-chattering terms & 0.31 (0.24--0.40) & 8.7 (1.9--21.9) & 0.51 (0.44--0.60) & 1.11 (0.68--1.61) & smooth; adopted \\
+$-10$ & 0.45 & 10.84 & 0.0879 \\
+$-5$  & 0.36 & 24.38 & 0.0310 \\
+$5$   & 0.31 & 21.00 & 0.1000 \\
+$10$  & 0.41 & 10.76 & 0.1388 \\
 \bottomrule
 \end{tabular}
-\caption{Method C settings. Metrics reported as mean (range) over the four
-initial angles $\gam_0\in\{-10,-5,5,10\}\degC$. ``Oscillation'' is this
-report's defined metric: peak-to-peak $\gam$ after $\ts$.}
+\caption{Selected output bias, $k=1.05$, for each initial angle.}
+\label{tab:method-a-selected}
+\end{table}
+
+The choice involves a trade-off: $k=1$ has lower overshoot and a slightly
+shorter worst-case settling time than $k=1.05$. Increasing the bias further
+to $k=1.25$ worsens both error and overshoot, so more compensation is not
+always better. The slight preference for $k>1$ is an empirical result for
+this finite-horizon test with cart motion and friction, not a correction to
+the stationary force balance. Although the selected setting meets the
+settling-time target, its \SI{24.38}{\%} worst-case overshoot and nonzero
+residual error do not meet the no-overshoot and zero-error targets.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{p1_improvement_1_comparison.pdf}
+\caption{Baseline and selected output bias $k=1.05$. Rows show the four
+initial angles; columns show angle, angular velocity and force. Horizontal
+dotted lines mark the $\pm\SI{1}{\degree}$ settling band.}
+\label{fig:method-a-comparison}
+\end{figure}
+
+\subsection{Method B: Asymmetric output-singleton spacing}
+\label{sec:method-b}
+
+\paragraph{Motivation and hypothesis.}
+This method adjusts the force requested by the baseline NS and PS
+consequents. Since the slope makes
+uphill and downhill motion unequal, independently tuning these forces may
+improve the correction and braking response.
+
+\paragraph{Design.}
+The output singletons are parameterised as
+\begin{equation}
+ [F_{\mathrm{NB}},F_{\mathrm{NS}},F_{\mathrm{ZO}},F_{\mathrm{PS}},F_{\mathrm{PB}}]
+ =[-50,-F_-,0,F_+,50]\,\si{\N},\qquad 0<F_-,F_+<50.
+ \label{eq:method-b-spacing}
+\end{equation}
+The baseline has $F_-=F_+=25$. Input MFs, rules, inference methods and the
+simulator remain unchanged. Unlike Method A, this method changes output
+spacing without shifting the zero singleton; the two methods are not combined.
+
+A $9\times9$ grid, $F_-,F_+\in\{5,10,\ldots,45\}$, followed by refinement
+around both the overall and symmetric selections tests 193 distinct pairs
+at four initial angles, giving 772 simulations. Of these pairs, 80 give
+valid responses that all settle within \SI{1}{\s}. The selected pair has
+the lowest worst-case absolute overshoot among these,
+$O_\gamma=\max_t\{0,-\operatorname{sgn}(\gam_0)\gam(t)\}$;
+ties are resolved by settling time and integral absolute error.
+Here $O_\gamma$ is in degrees, rather than the percentage metric $\overshoot$.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Setting & $\ts$ (\si{\s}) & $O_\gamma$ (\si{\degree}) & $\sse$ (\si{\degree}) & Force range (\si{\N}) \\
+\midrule
+Baseline & $\infty$ & 2.996 & 1.943 & 0.974 \\
+Symmetric: $F_-=F_+=49.5$ & 0.37 & 1.167 & 0.855 & 0.409 \\
+Asymmetric: $F_-=40$, $F_+=49.5$ & 0.37 & 1.123 & 0.854 & 0.408 \\
+\bottomrule
+\end{tabular}
+\caption{Worst-case metrics across all four initial angles. Residual error
+$\sse$ is mean absolute angle over $t\in[4,5]$~\si{\s}; force range is
+peak-to-peak force over the same interval. $\ts=\infty$ means unsettled
+within \SI{5}{\s}. Both tuned settings retain the baseline input MFs.}
+\label{tab:method-b}
+\end{table}
+
+\paragraph{Results and interpretation.}
+The selected outputs are $[-50,-40,0,49.5,50]\,\si{\N}$.
+All four responses settle within \SI{0.37}{\s}, meeting the stricter
+below-\SI{0.5}{\s} target, whereas the baseline does not settle within
+\SI{5}{\s} for every start. Compared with baseline, worst-case overshoot
+falls from \SI{2.996}{\degree} to \SI{1.123}{\degree}, residual error
+from \SI{1.943}{\degree} to \SI{0.854}{\degree}, and final-second
+force range from \SI{0.974}{\N} to \SI{0.408}{\N}.
+This smoother final response comes with a small increase in total force
+variation, $\sum_i|f_{i+1}-f_i|$, from \SI{129.1}{\N} to \SI{132.2}{\N}.
+
+Increasing the intermediate singleton magnitudes strengthens corrective
+forces without narrowing the input MFs. Most of the improvement is already
+obtained with symmetric spacing. Asymmetry adds a smaller benefit: reducing
+$F_-$ from 49.5 to 40 lowers overshoot from \SI{1.167}{\degree} to
+\SI{1.123}{\degree} at the same settling time. Figures~\ref{fig:method-b-heatmaps}
+and~\ref{fig:method-b-comparison} show the parameter dependence and responses;
+Figure~\ref{fig:method-b-params} shows the membership functions and control surface.
+
+The selected $F_+=49.5$ lies at the tested upper boundary, close to the PB
+singleton, so this is the best tested setting, not an established optimum.
+Overshoot and residual error remain nonzero. In particular, $f(0,0)=0$
+still cannot supply the stationary uphill holding force. Final-second
+statistics describe the five-second simulation, not proven equilibrium.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/p1_improvement_2_1_heatmaps.pdf}
+\caption{Coarse and refined output-spacing sweep, including all 193 tested
+pairs. Red outlines mark the selected pair $(F_-,F_+)=(40,49.5)$, which
+settles within \SI{0.37}{\s}. Each coloured cell reports the worst case
+across four starting angles. Gray settling-time cells are unsettled within
+\SI{5}{\s}; white cells were not tested. Axes list sampled values at equal
+spacing, not proportional numerical distances.}
+\label{fig:method-b-heatmaps}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/p1_improvement_2_1_comparison.pdf}
+\caption{Baseline and selected asymmetric output spacing. Rows show
+initial angles; columns show angle, angular velocity and force. Dotted horizontal lines mark the
+$\pm\SI{1}{\degree}$ settling band.}
+\label{fig:method-b-comparison}
+\end{figure}
+
+\subsection{Method C: Rule weighting}
+\label{sec:method-c}
+
+\paragraph{Motivation and hypothesis.}
+At $p=d=0$ only the $(\mathrm{ZO},\mathrm{ZO})\to\mathrm{ZO}$ rule fires
+(its neighbours are triangular, not flat-topped, so they vanish exactly at
+the origin), forcing $f=0$ whenever $\gam=0$; this is the same root cause
+Method A addresses, but here the input MFs and all 25 crisp consequents are
+left untouched. Away from the origin, 2--4 rules overlap. The hypothesis is
+that giving each rule its own weight $w_{ij}\in(0.02,1]$ can bias which
+overlapping rule dominates the \texttt{wtaver} blend enough to pull the
+equilibrium and the transient response closer to the targets, without moving
+any breakpoint or output level.
+
+\paragraph{Design.}
+Each rule's \texttt{addRule} weight is one entry of a $5\times5$ matrix
+$W$ (rows/cols ordered NB,NS,ZO,PS,PB for $p,d$), giving
+\begin{equation}
+  f = \frac{\sum_{i,j} w_{ij}\min(\mu_p^i,\mu_d^j)\,z_{ij}}
+           {\sum_{i,j} w_{ij}\min(\mu_p^i,\mu_d^j)}.
+  \label{eq:method-c-weight}
+\end{equation}
+$W$ is searched with \texttt{fminsearch} (derivative-free, since the cost
+comes from the simulator, not a closed form) from several random and
+warm-started restarts, minimising an integral-squared-error cost on $\gam(t)$
+(weighted after $t=\SI{0.5}{\s}$ and over the final \SI{1}{\s}) plus explicit
+overshoot and $\sse$ penalties, summed over all four $\gam_0$. A first
+optimised setting (S2) is reported alongside the adopted one (S3), which
+adds two extra penalty terms, $\sum(\Delta f)^2$ and $\sum(\Delta\gamdot)^2$
+restricted to the second half of the run, because S2 is a negative result
+(Section~\ref{sec:negative}) despite its tracking numbers.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Setting & $\ts$ (\si{\s}) & $\overshoot$ (\si{\%}) & $\sse$ (\si{\degree}) & Force range (\si{\N}) \\
+\midrule
+Baseline, $w_{ij}=1$ & $\infty$ & 56.44 & 1.943 & 0.974 \\
+S2: tracking-only cost & 0.70 & 11.40 & 0.335 & 34.185 \\
+S3: + chatter penalty (adopted) & 0.40 & 21.91 & 0.604 & 0.893 \\
+\bottomrule
+\end{tabular}
+\caption{Method C settings, worst case across the four initial angles.
+Force range is peak-to-peak $f$ over the final \SI{1}{\s}. $\ts=\infty$
+denotes failure to settle within the five-second simulation.}
 \label{tab:method-c}
 \end{table}
 
-\paragraph{Results and interpretation.} The hypothesis held for settling
-speed and steady-state error: rule weighting alone takes $\ts$ from $\infty$
-to well under \SI{0.5}{\s} for every initial angle (S3), and cuts mean
-$\sse$ by $72\%$ (from $1.83\degC$ to $0.51\degC$), by shifting the
-equilibrium blend rather than any breakpoint. It does not reach zero
-overshoot or zero $\sse$: because the single rule active at the exact origin
-still always outputs $0\,$N regardless of its own weight, weighting can only
-push the equilibrium \emph{close to} $\gam{=}0$, never exactly onto it, so a
-small residual bias and a proportionally small overshoot on the way to it are
-an expected floor for this method used alone (see
-Section~\ref{sec:combination} for combining it with a crisp-value shift,
-which \emph{can} move that zero-force point).
+\paragraph{Results and interpretation.}
+Rule weighting alone takes worst-case $\ts$ from $\infty$ to
+\SI{0.40}{\s} and worst-case $\sse$ from \SI{1.943}{\degree} to
+\SI{0.604}{\degree} (S3), by shifting the equilibrium blend rather than any
+breakpoint. Neither zero overshoot nor zero $\sse$ is reached: the rule
+active at the exact origin still always outputs $0\,$N regardless of its
+weight, so weighting can only push the equilibrium close to $\gam=0$, not
+onto it (Section~\ref{sec:combination} considers combining this with
+Method A/B's output shift, which can move that zero-force point).
 
-A second, more important finding is about the metric itself. Table
-\ref{tab:method-c}'s own \emph{Oscillation} column (peak-to-peak $\gam$ after
-$\ts$) is almost identical between S2 ($1.08\degC$ mean) and S3
-($1.11\degC$ mean) -- it does not distinguish them at all, because $\gam$
-looks essentially flat in both cases (Figure~\ref{fig:methodc} vs.\ the
-equivalent S2 plot, not reproduced here for space). Yet S2's cart force was
-visibly bang-banging between its saturation limits and its tail angular
-velocity had standard deviation $3.70\degC/\text{s}$ (range
-$3.55$--$3.81$), while S3's was $0.063\degC/\text{s}$ (range
-$0.023$--$0.099$) -- a $\sim\!59\times$ reduction -- for a worse-looking
-Oscillation number. This is a case where the worksheet's own advice (Section
-8, item 3: \emph{``the metrics need to be reasonable and not placed for the
-sake of measuring''}) is directly actionable: peak-to-peak $\gam$ misses
-chattering that lives in $\gamdot$ and $f$, not $\gam$ itself, so two
-purpose-built metrics -- $\max|\Delta f|$ between consecutive controller
-updates and $\operatorname{std}(\gamdot)$ over the run's second half -- were
-added specifically to catch it, and are what motivated rejecting S2 for S3
-despite S2's better raw tracking numbers.
+S2 minimises $\ts$, overshoot and $\sse$ further than S3, but its worst-case
+force range over the final second is \SI{34.185}{\N} against S3's
+\SI{0.893}{\N} -- a $38\times$ difference -- and its worst-case
+$\gamdot$ range is \SI{12.945}{\degree\per\s} against S3's
+\SI{0.291}{\degree\per\s}. Several $w_{ij}$ in S2 sit at the $0.02$ floor,
+so \eqref{eq:method-c-weight} effectively switches between near-binary force
+levels as $p,d$ cross a rule boundary, i.e.\ bang-bang control. S3 trades
+$\sim\SI{0.27}{\degree}$ of extra $\sse$ and higher overshoot for removing
+this chatter, judged necessary because ``negligible oscillation'' is an
+explicit requirement. Figure~\ref{fig:methodc} shows the adopted S3 responses.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$\gam_0$ (\si{\degree}) & $\ts$ (\si{\s}) & $\overshoot$ (\si{\%}) & $\sse$ (\si{\degree}) \\
+\midrule
+$-10$ & 0.40 & 1.89 & 0.604 \\
+$-5$  & 0.30 & 3.09 & 0.522 \\
+$5$   & 0.31 & 21.91 & 0.466 \\
+$10$  & 0.24 & 7.87 & 0.441 \\
+\bottomrule
+\end{tabular}
+\caption{Selected setting S3, for each initial angle.}
+\label{tab:method-c-selected}
+\end{table}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{p1_responses_methodC.pdf}
-\caption{Method C (final, S3) responses for the four initial angles. Compare
-to the baseline in Figure~\ref{fig:baseline}: $\gam$ settles in well under
-\SI{0.5}{\s} for every initial angle instead of drifting to a fixed offset,
-and $\gamdot$/$f$ show no sustained chatter (contrast with S2, discussed in
-the text and in Section~\ref{sec:negative}).}
+\caption{Method C (S3) responses for the four initial angles. Contrast with
+Figure~\ref{fig:baseline}: $\gam$ settles under \SI{0.5}{\s} instead of
+drifting to a fixed offset, and $\gamdot$/$f$ show no sustained chatter.}
 \label{fig:methodc}
 \end{figure}
 
-\subsection{Method D: \todo{second method of member 1}}
+\subsection{Method D: \todo{second method of member 2}}
 \label{sec:method-d}
 
 \paragraph{Motivation and hypothesis.} \todo{}
@@ -591,24 +745,14 @@ the text and in Section~\ref{sec:negative}).}
 \toprule
 \textbf{Method} & \textbf{Observed effect} & \textbf{Proposed explanation / insight gained} \\
 \midrule
-Method C, v1 (rule weighting, tracking-only cost; S2 in Table~\ref{tab:method-c}) &
-Excellent $\ts$, overshoot and $\sse$ on $\gam$ alone, but the cart force
-visibly bangs between saturation limits and tail
-$\operatorname{std}(\gamdot){=}3.70\degC/\text{s}$ -- clearly sustained
-chattering, even though it barely moves the report's own peak-to-peak-$\gam$
-Oscillation metric. &
-Several rule weights were driven to their $0.02$ floor by the optimiser,
-since that minimises tracking error fastest; with weights differing by more
-than an order of magnitude, \texttt{wtaver} effectively swaps between two
-near-binary force levels as $p,d$ cross the boundary between two rules'
-support, i.e.\ the blend becomes close to bang-bang control. Insight: an
-optimisation objective built only from standard settling/overshoot/SS-error
-terms is not sufficient for this problem, because none of them look at
-$\gamdot$ or $f$ directly; adding explicit chattering penalties on
-$\Delta f$ and tail $\Delta\gamdot$ (giving S3) fixed it, at the cost of
-$\sim\!0.24\degC$ extra mean $\sse$ -- a trade accepted because ``negligible
-oscillations'' is an explicit worksheet requirement and the original
-Oscillation metric alone would not have caught the regression. \\
+Method C, S2 (rule weighting, tracking-only cost) &
+Best $\ts$/overshoot/$\sse$ of any Method C setting, but worst-case force
+range \SI{34.185}{\N} and $\gamdot$ range \SI{12.945}{\degree\per\s} over
+the final second -- clear sustained chatter. &
+Several rule weights collapse to the $0.02$ floor, so
+\eqref{eq:method-c-weight} swaps between near-binary force levels at rule
+boundaries. Adding explicit $\Delta f$/$\Delta\gamdot$ penalties (S3) fixed
+it at a small $\sse$ cost. \\
 \todo{} & \todo{} & \todo{} \\
 \bottomrule
 \end{tabular}
@@ -628,9 +772,7 @@ Oscillation metric alone would not have caught the regression. \\
 \midrule
 A & \todo{} & \todo{} & \todo{} & \todo{} \\
 B & \todo{} & \todo{} & \todo{} & \todo{} \\
-C & $\infty \to 0.31$ & $-12.9$ & $-1.32$ &
-\parbox[t]{4.2cm}{large -- only method so far under the \SI{0.5}{\s}
-target; see \S\ref{sec:method-c}} \\[0.6em]
+C & $\infty\to0.40$ & $-34.53$ & $-1.339$ & large, only method under \SI{0.5}{\s} so far \\
 D & \todo{} & \todo{} & \todo{} & \todo{} \\
 \bottomrule
 \end{tabular}
@@ -724,9 +866,10 @@ parameters, single seed, saturation, model-based simulation).}
 \section*{Declarations}
 \addcontentsline{toc}{section}{Declarations}
 \begin{itemize}[leftmargin=*]
-  \item All simulations reported here were produced by the submitted
-        \texttt{p1\_team16.mlx} worksheet with the seed
+  \item Method A simulations were produced by
+        \texttt{p1\_team16\_improvement\_1.m} in MATLAB R2025a with the seed
         $\mathrm{rng}(\mathrm{sum}([286716, 284748]))$.
+        \todo{Confirm the final submitted worksheet reproduces all reported results.}
   \item \todo{AI-tool / collaboration declaration as required by the course.}
   \item \todo{Statement on data availability, e.g.\ sweep data in
         Appendix~\ref{app:data}.}
@@ -742,14 +885,79 @@ parameters, single seed, saturation, model-based simulation).}
 \section{Full Tuning Data}
 \label{app:data}
 
-\todo{Complete sweep tables for every experiment, including the runs that are
-not discussed in the main body (worksheet Section 8, item 5).}
+\subsection{Method A: Full output-bias sweep}
+\label{app:method-a-data}
+
+The ten settings below give 40 simulations. Results are from
+\texttt{p1\_improvement\_1\_results.csv}; overshoot percentages are computed
+for each run as $100\max(0,\max_t[-\operatorname{sgn}(\gam_0)\gam(t)])/|\gam_0|$
+before taking the maximum across starting angles. Each column reports its
+own worst case. The three ranges use $t\in[4,5]$~\si{\s}.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}ccccccc@{}}
+\toprule
+$k$ & $\ts$ & $\overshoot$ & $\sse$ & $\Delta\gam$ & $\Delta\gamdot$ & $\Delta f$ \\
+ & (\si{\s}) & (\si{\%}) & (\si{\degree}) & (\si{\degree}) & (\si{\degree\per\s}) & (\si{\N}) \\
+\midrule
+0.00 & $\infty$ & 56.44 & 1.9427 & 0.10125 & 0.009781 & 0.9738 \\
+0.25 & $\infty$ & 49.32 & 1.4937 & 0.07707 & 0.007380 & 0.7429 \\
+0.50 & $\infty$ & 40.52 & 1.0532 & 0.05381 & 0.005110 & 0.5198 \\
+0.75 & 0.48 & 31.14 & 0.6146 & 0.03110 & 0.002930 & 0.3010 \\
+0.90 & 0.45 & 25.81 & 0.3509 & 0.01766 & 0.001655 & 0.1711 \\
+0.95 & 0.44 & 24.11 & 0.2630 & 0.01321 & 0.001237 & 0.1281 \\
+1.00 & 0.44 & 22.73 & 0.1754 & 0.00879 & 0.000822 & 0.0853 \\
+1.05 & 0.45 & 24.38 & 0.1388 & 0.00691 & 0.000643 & 0.0671 \\
+1.10 & 0.46 & 25.87 & 0.2283 & 0.01135 & 0.001055 & 0.1103 \\
+1.25 & 0.49 & 28.61 & 0.4956 & 0.02458 & 0.002279 & 0.2383 \\
+\bottomrule
+\end{tabular}
+\caption{All tested output-bias fractions and worst-case metrics.}
+\label{tab:method-a-full}
+\end{table}
+
+\subsection{Method B: Output-spacing sweep}
+\label{app:method-b-data}
+
+The 81 coarse pairs use $F_-,F_+\in\{5,10,\ldots,45\}\,\si{\N}$.
+Refinement adds 112 pairs, including off-diagonal neighbours of the symmetric
+selection, with magnitudes kept below \SI{50}{\N}. Experiments use
+\path{p1_team16_improvement_2_1.m} in MATLAB R2025a with the unchanged team
+seed. The accompanying \path{p1_improvement_2_1_results.csv} contains all
+772 runs; \path{p1_improvement_2_1_summary.csv} contains every pair's
+worst-case metrics. The MAT archive retains all sweep trajectories and
+the experiment source. The experiment calls
+\path{report/export_improvement_2_figures.m} to generate the full sweep and
+baseline comparison from these trajectories and synchronise the graph
+files with those used in this report.
+
+\todo{Add full tuning data for the remaining methods.}
 
 \section{Membership Function Figures}
 \label{app:figs}
 
-\todo{MF plots and control surfaces for each method and for the best model,
-one page each.}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{p1_improvement_1_parameters.pdf}
+\caption{Method A at $k=1.05$. The input membership functions are unchanged;
+only the five output singletons are shifted and clipped as in
+\eqref{eq:method-a-bias}.}
+\label{fig:method-a-params}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/p1_improvement_2_1_parameters.pdf}
+\caption{Method B with outputs $[-50,-40,0,49.5,50]\,\si{\N}$.
+Only the NS and PS output singletons change; input MFs remain baseline.
+The surface gives stronger intermediate corrective forces while retaining
+$f(0,0)=0$.}
+\label{fig:method-b-params}
+\end{figure}
+
+\todo{Add MF plots for the remaining methods and the combined best model.}
 
 \section{Worksheet Code Listing}
 \label{app:code}
