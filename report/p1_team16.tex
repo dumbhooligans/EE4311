@@ -119,7 +119,8 @@ A0284748L \\
 \midrule
 A0286716R & Method A: output bias & Investigated gravity-compensated output singletons across four initial angles; analysed residual-error reduction, clipping and overcompensation. \\
           & Method B: output spacing & Tested 193 symmetric and asymmetric singleton pairs; compared settling, overshoot, residual error and force variation against baseline. \\[0.4em]
-A0284748L & Methods C and D & \todo{Member 2: add contributions after investigating both methods.} \\
+A0284748L & Method C: rule weighting & Investigated per-rule weighting of the 25-rule base via numerical search (\texttt{fminsearch}, multi-restart) across four initial angles; analysed steady-state-error reduction and a force-chattering negative result that motivated an anti-chattering cost term. \\
+          & Method D: ZO dead-zone width & Tuned the ZO membership-function half-width on both inputs via grid and continuous search; analysed the settling-time/overshoot trade-off and a $\gam$-ringing negative result that motivated a whole-run oscillation penalty. \\[0.4em]
 \bottomrule
 \end{tabular}
 \caption{Individual contributions. Each member must have at least two
