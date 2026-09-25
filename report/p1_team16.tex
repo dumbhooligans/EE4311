@@ -728,12 +728,92 @@ drifting to a fixed offset, and $\gamdot$/$f$ show no sustained chatter.}
 \label{fig:methodc}
 \end{figure}
 
-\subsection{Method D: \todo{second method of member 2}}
+\subsection{Method D: ZO dead-zone width}
 \label{sec:method-d}
 
-\paragraph{Motivation and hypothesis.} \todo{}
-\paragraph{Design.} \todo{}
-\paragraph{Results and interpretation.} \todo{}
+\paragraph{Motivation and hypothesis.}
+Method C diagnosed the baseline offset as the single
+$(\mathrm{ZO},\mathrm{ZO})\to\mathrm{ZO}$ rule always forcing $f=0$ at the
+origin. Rule weighting cannot change that rule's own output; instead this
+method narrows the ZO term's half-width on both inputs (crisp outputs and
+rules untouched, isolating this lever from A/B/C), so a smaller angle error
+is enough to bring a non-zero rule into play and the controller starts
+correcting sooner.
+
+\paragraph{Design.}
+The ZO half-widths $z_p$ (baseline \SI{2.6}{\degree}) and $z_d$ (baseline
+\SI{35}{\degree\per\s}) parameterise all five terms per input symmetrically,
+e.g.\ $P_{\mathrm{ZO}}=[-z_p,0,0,z_p]$, $P_{\mathrm{NS}}=[-10,-z_p,-z_p,0]$,
+with the outer NB/PB breakpoints fixed, so the partition still exactly tiles
+the universe. $(z_p,z_d)$ were tuned by a 2D grid search, then a continuous
+\texttt{fminsearch} refinement, over worst-case $\ts$, $\overshoot$, $\sse$
+and final-second force range across all four $\gam_0$. A first setting
+minimised these well but rang visibly (Section~\ref{sec:negative}): the
+search only scored the final second of each run, so it never penalised
+transient wobbling. The reported setting adds a ringing penalty -- the
+number of $\gamdot$ sign changes over the \emph{whole} run beyond the one
+expected reversal on the way to the target -- and re-searches.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Setting & $\ts$ (\si{\s}) & $\overshoot$ (\si{\%}) & $\sse$ (\si{\degree}) & Ringing (extra $\gamdot$ crossings) \\
+\midrule
+Baseline, $z_p=2.6$, $z_d=35$ & $\infty$ & 56.44 & 1.943 & 0 \\
+$z_p=0.5$, $z_d=22$ (tracking-only) & 0.54 & 44.23 & 0.309 & 19 \\
+$z_p=1.10$, $z_d=23$ (adopted) & 0.50 & 42.76 & 0.712 & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Method D settings, worst case across the four initial angles.
+Ringing is $\gamdot$ zero-crossings beyond the first (expected) one.}
+\label{tab:method-d}
+\end{table}
+
+\paragraph{Results and interpretation.}
+Narrowing the ZO region alone takes worst-case $\ts$ from $\infty$ to
+\SI{0.50}{\s} and worst-case $\sse$ from \SI{1.943}{\degree} to
+\SI{0.712}{\degree}, with every response showing exactly one clean
+overshoot-and-settle. \SI{0.50}{\s} is a boundary result, not comfortably
+under the target: both the wide grid and the continuous refinement converge
+to the same point, so this appears to be a genuine limit of tuning
+$z_p,z_d$ alone rather than a search shortfall -- narrowing further keeps
+lowering $\ts$ but reintroduces ringing (Table~\ref{tab:method-d}, row 2).
+Worst-case overshoot falls only modestly, to \SI{42.76}{\%}: shrinking the
+ZO region also shrinks the distance over which the NS/PS ramps act, raising
+the effective gain near the origin, which speeds convergence but also makes
+overshoot more likely. As with Method C, the residual $\sse$ persists because
+$z_p,z_d$ do not change what the origin rule itself outputs. Unlike Method
+C, no force chattering appears at any tested setting (the levers Method C
+needed to touch -- crisp outputs, rule weights -- are both left at baseline
+here). Figure~\ref{fig:methodd} shows the adopted responses.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}cccc@{}}
+\toprule
+$\gam_0$ (\si{\degree}) & $\ts$ (\si{\s}) & $\overshoot$ (\si{\%}) & $\sse$ (\si{\degree}) \\
+\midrule
+$-10$ & 0.50 & 0.00 & 0.712 \\
+$-5$  & 0.28 & 0.00 & 0.660 \\
+$5$   & 0.38 & 42.76 & 0.639 \\
+$10$  & 0.50 & 29.46 & 0.635 \\
+\bottomrule
+\end{tabular}
+\caption{Selected setting $z_p=1.10$, $z_d=23$, for each initial angle.}
+\label{tab:method-d-selected}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{p1_responses_methodD.pdf}
+\caption{Method D (adopted) responses for the four initial angles. Every
+$\gam$ trace shows one clean overshoot then settles, with no repeated
+wobbling, unlike the rejected $z_p=0.5$ setting (Section~\ref{sec:negative}).}
+\label{fig:methodd}
+\end{figure}
 
 \subsection{Negative results}
 \label{sec:negative}
@@ -753,7 +833,17 @@ Several rule weights collapse to the $0.02$ floor, so
 \eqref{eq:method-c-weight} swaps between near-binary force levels at rule
 boundaries. Adding explicit $\Delta f$/$\Delta\gamdot$ penalties (S3) fixed
 it at a small $\sse$ cost. \\
-\todo{} & \todo{} & \todo{} \\
+Method D, $z_p=0.5,z_d=22$ (tracking-only cost) &
+Best $\ts$ (\SI{0.54}{\s}) and $\sse$ of any Method D setting, but $\gam$
+visibly rings -- 19 extra $\gamdot$ sign changes (worst case) before
+settling, easily seen in the response plot despite the final-second metrics
+looking clean. &
+The search only scored the final second of each run, so transient wobbling
+(caused by the high effective gain of a very narrow ZO region) was never
+penalised -- the same blind spot as Method C's S2, in the transient instead
+of the tail. Adding a whole-run ringing penalty and re-searching removed it,
+at the cost of $\ts$ landing at the \SI{0.5}{\s} boundary instead of under
+it. \\
 \bottomrule
 \end{tabular}
 \caption{Tuning attempts that did not improve performance.}
@@ -773,7 +863,9 @@ it at a small $\sse$ cost. \\
 A & \todo{} & \todo{} & \todo{} & \todo{} \\
 B & \todo{} & \todo{} & \todo{} & \todo{} \\
 C & $\infty\to0.40$ & $-34.53$ & $-1.339$ & large, only method under \SI{0.5}{\s} so far \\
-D & \todo{} & \todo{} & \todo{} & \todo{} \\
+D & $\infty\to0.50$ & $-13.68$ & $-1.231$ &
+\parbox[t]{4.2cm}{large -- ties C for fastest settling; smoother
+transient than C, see \S\ref{sec:method-d}} \\[0.6em]
 \bottomrule
 \end{tabular}
 \caption{Improvement contributed by each method relative to the baseline. This
